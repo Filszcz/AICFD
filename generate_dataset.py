@@ -11,7 +11,9 @@ import textwrap
 # --- Configuration ---
 TEMPLATE_DIR = "base_template"
 OUTPUT_DIR = "data_output"
-N_CORES = 22
+
+# OPTIMIZATION: Use physical cores only to avoid SMT/Hyperthreading overhead
+N_CORES = 12
 
 # Parameter Ranges
 lengths = np.linspace(3, 50, 25)
@@ -54,13 +56,21 @@ def generate_case_files(run_dir, L, D, ref_level, Ux):
         wallDist { method meshWave; correctWalls true; }
     """)
 
-    # 2. BlockMesh (Variable grading 1.0 -> 2.0 density)
-    dens_mult = [1.0, 1.25, 1.5, 1.75, 2.0][ref_level]
+    # 2. BlockMesh with STEEP EXPONENTIAL Scaling
+    # Previous: 1.4^N -> [1.0, 1.4, 1.9, 2.7, 3.8]
+    # New: 2.0^N -> [1.0, 2.0, 4.0, 8.0, 16.0] (Much finer at Ref 4)
+    dens_mult = 2.0 ** ref_level
+    
     r, z = D / 2.0, 0.05
-    y_cells = int(40 * dens_mult) 
+    
+    # Base Y resolution
+    base_y = 25 
+    y_cells = int(base_y * dens_mult)
     x_cells = int((L / D * 20) * dens_mult)
+    
     if y_cells % 2 != 0: y_cells += 1
-    # Symmetric boundary layer grading
+    
+    # Grading: Symmetric Boundary Layers
     grading_y = "((0.5 0.5 10) (0.5 0.5 0.1))"
     
     write_foam_file(os.path.join(run_dir, "system", "blockMeshDict"), f"""\
@@ -173,42 +183,33 @@ def run_case(params):
         # 3. Solver
         subprocess.run(["simpleFoam"], cwd=run_dir, check=True, capture_output=True, text=True)
         
-        # 4. Extract RAW Data (No Interpolation)
+        # 4. Extract RAW Data
         touch_file = os.path.join(run_dir, "case.foam")
         open(touch_file, 'a').close()
         reader = pv.POpenFOAMReader(touch_file)
         reader.set_active_time_value(reader.time_values[-1])
-        
-        # Read FULL dataset (MultiBlock: Internal + Boundaries)
         data = reader.read()
         
         # --- A. Internal Mesh (Fluid) ---
         internal = data["internalMesh"]
-        
-        # Extract Centers
         fluid_pos = internal.cell_centers().points
         n_fluid = len(fluid_pos)
         
-        # Extract Physics
         fluid_U = internal["U"]
         fluid_p = internal["p"]
         fluid_k = internal["k"]
         fluid_eps = internal["epsilon"]
         
-        # Wall Distance (Handle missing field safely)
         if "y" in internal.array_names:
             fluid_y = internal["y"]
         elif "yPlus" in internal.array_names:
-             # Fallback geometry calculation if meshWave field missing
              fluid_y = (D/2.0) - np.abs(fluid_pos[:, 1])
         else:
              fluid_y = np.zeros(n_fluid)
              
-        # Encoding: [Fluid, Wall, Inlet, Outlet] -> [1, 0, 0, 0]
         fluid_type = np.tile([1, 0, 0, 0], (n_fluid, 1))
         
-        # --- B. Boundaries ---
-        # Collect boundary data to stack with fluid
+        # --- B. Boundaries (FILTERED: No FrontAndBack) ---
         b_pos_list = []
         b_U_list = []
         b_p_list = []
@@ -220,28 +221,26 @@ def run_case(params):
         if "boundary" in data.keys():
             boundaries = data["boundary"]
             for name in boundaries.keys():
+                # EXCLUDE EMPTY 2D PATCHES
+                if "frontAndBack" in name or "empty" in name.lower():
+                    continue
+
                 patch = boundaries[name]
                 if patch.n_cells == 0: continue
                 
-                # Patch Centers
                 n_patch = patch.n_cells
                 b_pos_list.append(patch.cell_centers().points)
                 
-                # Physics (OpenFOAM stores boundary values on faces)
                 b_U_list.append(patch["U"] if "U" in patch.array_names else np.zeros((n_patch, 3)))
                 b_p_list.append(patch["p"] if "p" in patch.array_names else np.zeros(n_patch))
                 b_k_list.append(patch["k"] if "k" in patch.array_names else np.zeros(n_patch))
                 b_eps_list.append(patch["epsilon"] if "epsilon" in patch.array_names else np.zeros(n_patch))
-                
-                # Wall dist on boundary is effectively 0
                 b_y_list.append(np.zeros(n_patch))
                 
-                # Encoding
                 encoding = get_patch_type_encoding(name)
                 b_type_list.append(np.tile(encoding, (n_patch, 1)))
 
         # --- C. Consolidate ---
-        # Lists to Arrays
         if b_pos_list:
             all_pos = np.vstack([fluid_pos] + b_pos_list)
             all_U = np.vstack([fluid_U] + b_U_list)
@@ -254,7 +253,7 @@ def run_case(params):
             all_pos, all_U, all_p, all_k, all_eps, all_y, all_type = \
             fluid_pos, fluid_U, fluid_p, fluid_k, fluid_eps, fluid_y, fluid_type
 
-        # Save Raw Arrays
+        # Save
         np.savez_compressed(
             output_path, 
             L=L, D=D, Ux_in=Ux, Ref=ref,
@@ -264,7 +263,7 @@ def run_case(params):
             k=all_k,       # (N,)
             epsilon=all_eps, # (N,)
             y=all_y,       # (N,)
-            type=all_type  # (N, 4) One-Hot
+            type=all_type  # (N, 4)
         )
         return f"Done: {case_name} (N={len(all_pos)})"
 
@@ -283,7 +282,7 @@ if __name__ == "__main__":
     tasks = [(*p, i) for i, p in enumerate(case_params)]
     
     print(f"Starting {len(tasks)} cases on {N_CORES} cores...")
-    print(f"Mode: RAW Extraction (Fluid + Boundaries) | Variable N")
+    print(f"Mode: Raw Extraction | 2D Layer Only | 1.7^N Refinement")
     start_time = time.time()
     
     with Pool(processes=N_CORES) as pool:
