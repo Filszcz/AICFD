@@ -11,9 +11,7 @@ import textwrap
 # --- Configuration ---
 TEMPLATE_DIR = "base_template"
 OUTPUT_DIR = "data_output"
-
-# OPTIMIZATION: Use physical cores only to avoid SMT/Hyperthreading overhead
-N_CORES = 12
+N_CORES = 10
 
 # Parameter Ranges
 lengths = np.linspace(3, 50, 25)
@@ -56,17 +54,18 @@ def generate_case_files(run_dir, L, D, ref_level, Ux):
         wallDist { method meshWave; correctWalls true; }
     """)
 
-    # 2. BlockMesh with STEEP EXPONENTIAL Scaling
-    # Previous: 1.4^N -> [1.0, 1.4, 1.9, 2.7, 3.8]
-    # New: 2.0^N -> [1.0, 2.0, 4.0, 8.0, 16.0] (Much finer at Ref 4)
-    dens_mult = 2.0 ** ref_level
+    # 2. BlockMesh with EXPONENTIAL Scaling
+    # Previous: Linear [1.0, 1.25, 1.5, 1.75, 2.0]
+    # New: Exponential (1.4^N) -> [1.0, 1.4, 1.96, 2.74, 3.84]
+    # This creates a much wider variety of mesh densities.
+    dens_mult = 1.4 ** ref_level
     
     r, z = D / 2.0, 0.05
     
-    # Base Y resolution
+    # Reduced Base Y from 40 to 25 to fix "mesh too big" complaint
     base_y = 25 
     y_cells = int(base_y * dens_mult)
-    x_cells = int((L / D * 20) * dens_mult)
+    x_cells = int((L / D * 20) * dens_mult) # Aspect ratio maintained
     
     if y_cells % 2 != 0: y_cells += 1
     
@@ -209,7 +208,7 @@ def run_case(params):
              
         fluid_type = np.tile([1, 0, 0, 0], (n_fluid, 1))
         
-        # --- B. Boundaries (FILTERED: No FrontAndBack) ---
+        # --- B. Boundaries (FILTERED) ---
         b_pos_list = []
         b_U_list = []
         b_p_list = []
@@ -221,7 +220,7 @@ def run_case(params):
         if "boundary" in data.keys():
             boundaries = data["boundary"]
             for name in boundaries.keys():
-                # EXCLUDE EMPTY 2D PATCHES
+                # [FIX 1] EXCLUDE EMPTY PATCHES (2D THICKNESS FIX)
                 if "frontAndBack" in name or "empty" in name.lower():
                     continue
 
@@ -282,7 +281,7 @@ if __name__ == "__main__":
     tasks = [(*p, i) for i, p in enumerate(case_params)]
     
     print(f"Starting {len(tasks)} cases on {N_CORES} cores...")
-    print(f"Mode: Raw Extraction | 2D Layer Only | 1.7^N Refinement")
+    print(f"Mode: Raw Extraction | 2D Layer Only | Exponential Refinement")
     start_time = time.time()
     
     with Pool(processes=N_CORES) as pool:
