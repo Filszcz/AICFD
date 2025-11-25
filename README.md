@@ -1,7 +1,3 @@
-Here is the updated `README.md` reflecting the **2.0 Exponential Mesh Refinement** and the specific optimizations for your 12-core setup.
-
-***
-
 # Deep Learning CFD Dataset Generator (Raw Point Cloud Edition)
 
 ## Project Overview
