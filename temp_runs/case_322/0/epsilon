@@ -1,3 +1,0 @@
-FoamFile { version 2.0; format ascii; class volScalarField; object epsilon; }
-dimensions [0 2 -3 0 0 0 0]; internalField uniform 0.03754038088455247;
-boundaryField { inlet { type fixedValue; value uniform 0.03754038088455247; } outlet { type zeroGradient; } walls { type epsilonWallFunction; value uniform 0.03754038088455247; } frontAndBack { type empty; } }
