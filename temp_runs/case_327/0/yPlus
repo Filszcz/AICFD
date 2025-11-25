@@ -1,0 +1,47 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+  =========                 |
+  \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
+   \\    /   O peration     | Website:  https://openfoam.org
+    \\  /    A nd           | Version:  13
+     \\/     M anipulation  |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    format      binary;
+    class       volScalarField;
+    location    "0";
+    object      yPlus;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+dimensions      [];
+
+internalField   uniform 0;
+
+boundaryField
+{
+    inlet
+    {
+        type            calculated;
+        value           uniform 0;
+    }
+    outlet
+    {
+        type            calculated;
+        value           uniform 0;
+    }
+    walls
+    {
+        type            calculated;
+        value           nonuniform List<scalar> 
+454
+(Ì#›Órõ@Ì#›Órõ@«$›Órõ@ê"›Órõ@%›Órõ@n&›Órõ@«$›Órõ@%›Órõ@«$›Órõ@Ì#›Órõ@«$›Órõ@ê"›Órõ@«$›Órõ@Ì#›Órõ@n&›Órõ@%›Órõ@	"›Órõ@	"›Órõ@%›Órõ@Ì#›Órõ@«$›Órõ@%›Órõ@«$›Órõ@Ì#›Órõ@ê"›Órõ@%›Órõ@ê"›Órõ@«$›Órõ@«$›Órõ@«$›Órõ@«$›Órõ@«$›Órõ@ê"›Órõ@	"›Órõ@ê"›Órõ@«$›Órõ@«$›Órõ@%›Órõ@%›Órõ@Ì#›Órõ@Ì#›Órõ@«$›Órõ@Ì#›Órõ@Ì#›Órõ@Ì#›Órõ@Ì#›Órõ@«$›Órõ@%›Órõ@%›Órõ@%›Órõ@«$›Órõ@«$›Órõ@	"›Órõ@%›Órõ@n&›Órõ@%›Órõ@«$›Órõ@%›Órõ@«$›Órõ@%›Órõ@(!›Órõ@%›Órõ@«$›Órõ@Ì#›Órõ@«$›Órõ@%›Órõ@«$›Órõ@ê"›Órõ@	"›Órõ@ê"›Órõ@Ì#›Órõ@«$›Órõ@Ì#›Órõ@%›Órõ@«$›Órõ@%›Órõ@	"›Órõ@Ì#›Órõ@%›Órõ@%›Órõ@«$›Órõ@Ì#›Órõ@Ì#›Órõ@«$›Órõ@Ì#›Órõ@%›Órõ@«$›Órõ@%›Órõ@%›Órõ@«$›Órõ@Ì#›Órõ@Ì#›Órõ@n&›Órõ@%›Órõ@Ì#›Órõ@ê"›Órõ@%›Órõ@Ì#›Órõ@«$›Órõ@Ì#›Órõ@%›Órõ@«$›Órõ@n&›Órõ@«$›Órõ@ê"›Órõ@N'›Órõ@«$›Órõ@«$›Órõ@%›Órõ@Ì#›Órõ@«$›Órõ@«$›Órõ@%›Órõ@%›Órõ@n&›Órõ@«$›Órõ@ê"›Órõ@Ì#›Órõ@«$›Órõ@«$›Órõ@ê"›Órõ@«$›Órõ@%›Órõ@Ì#›Órõ@Ì#›Órõ@«$›Órõ@Ì#›Órõ@n&›Órõ@%›Órõ@%›Órõ@%›Órõ@«$›Órõ@«$›Órõ@Ì#›Órõ@%›Órõ@«$›Órõ@%›Órõ@«$›Órõ@Ì#›Órõ@%›Órõ@«$›Órõ@Ì#›Órõ@%›Órõ@Ì#›Órõ@«$›Órõ@%›Órõ@«$›Órõ@Ì#›Órõ@«$›Órõ@%›Órõ@«$›Órõ@«$›Órõ@%›Órõ@«$›Órõ@%›Órõ@«$›Órõ@«$›Órõ@%›Órõ@ê"›Órõ@Ì#›Órõ@Ì#›Órõ@«$›Órõ@%›Órõ@n&›Órõ@Ì#›Órõ@Ì#›Órõ@ê"›Órõ@«$›Órõ@%›Órõ@Ì#›Órõ@n&›Órõ@«$›Órõ@«$›Órõ@«$›Órõ@Ì#›Órõ@ê"›Órõ@n&›Órõ@«$›Órõ@n&›Órõ@Ì#›Órõ@«$›Órõ@%›Órõ@n&›Órõ@n&›Órõ@%›Órõ@%›Órõ@n&›Órõ@Ì#›Órõ@«$›Órõ@%›Órõ@«$›Órõ@ê"›Órõ@%›Órõ@%›Órõ@%›Órõ@Ì#›Órõ@%›Órõ@«$›Órõ@«$›Órõ@«$›Órõ@%›Órõ@«$›Órõ@n&›Órõ@«$›Órõ@%›Órõ@n&›Órõ@n&›Órõ@«$›Órõ@Ì#›Órõ@%›Órõ@n&›Órõ@«$›Órõ@%›Órõ@ê"›Órõ@%›Órõ@«$›Órõ@Ì#›Órõ@«$›Órõ@%›Órõ@«$›Órõ@%›Órõ@%›Órõ@n&›Órõ@Ì#›Órõ@«$›Órõ@n&›Órõ@ê"›Órõ@Ì#›Órõ@«$›Órõ@%›Órõ@«$›Órõ@«$›Órõ@«$›Órõ@%›Órõ@%›Órõ@Ì#›Órõ@Ì#›Órõ@%›Órõ@Ì#›Órõ@«$›Órõ@«$›Órõ@Ì#›Órõ@%›Órõ@«$›Órõ@%›Órõ@%›Órõ@«$›Órõ@%›Órõ@«$›Órõ@Ì#›Órõ@%›Órõ@Ì#›Órõ@«$›Órõ@%›Órõ@%›Órõ@%›Órõ@«$›Órõ@%›Órõ@Ì#›Órõ@«$›Órõ@«$›Órõ@%›Órõ@n&›Órõ@Ì#›Órõ@«$›Órõ@n&›Órõ@%›Órõ@n&›Órõ@«$›Órõ@%›Órõ@«$›Órõ@n&›Órõ@Ì#›Órõ@%›Órõ@Ì#›Órõ@%›Órõ@«$›Órõ@«$›Órõ@%›Órõ@«$›Órõ@ê"›Órõ@«$›Órõ@%›Órõ@«$›Órõ@«$›Órõ@«$›Órõ@«$›Órõ@%›Órõ@«$›Órõ@«$›Órõ@N'›Órõ@%›Órõ@«$›Órõ@«$›Órõ@%›Órõ@n&›Órõ@«$›Órõ@n&›Órõ@%›Órõ@ê"›Órõ@«$›Órõ@«$›Órõ@«$›Órõ@Ì#›Órõ@ê"›Órõ@n&›Órõ@«$›Órõ@%›Órõ@«$›Órõ@	"›Órõ@Ì#›Órõ@«$›Órõ@n&›Órõ@%›Órõ@Ì#›Órõ@«$›Órõ@%›Órõ@«$›Órõ@«$›Órõ@Ì#›Órõ@%›Órõ@ê"›Órõ@Ì#›Órõ@Ì#›Órõ@ê"›Órõ@«$›Órõ@%›Órõ@%›Órõ@	"›Órõ@«$›Órõ@%›Órõ@«$›Órõ@«$›Órõ@«$›Órõ@Ì#›Órõ@«$›Órõ@«$›Órõ@Ì#›Órõ@n&›Órõ@«$›Órõ@«$›Órõ@«$›Órõ@%›Órõ@	"›Órõ@«$›Órõ@Ì#›Órõ@«$›Órõ@%›Órõ@Ì#›Órõ@Ì#›Órõ@Ì#›Órõ@Ì#›Órõ@%›Órõ@«$›Órõ@%›Órõ@%›Órõ@Ì#›Órõ@ê"›Órõ@Ì#›Órõ@ê"›Órõ@ê"›Órõ@«$›Órõ@«$›Órõ@%›Órõ@Ì#›Órõ@«$›Órõ@n&›Órõ@	"›Órõ@%›Órõ@«$›Órõ@Ì#›Órõ@%›Órõ@Ì#›Órõ@n&›Órõ@«$›Órõ@Ì#›Órõ@Ì#›Órõ@Ì#›Órõ@«$›Órõ@Ì#›Órõ@%›Órõ@Ì#›Órõ@%›Órõ@Ì#›Órõ@«$›Órõ@«$›Órõ@Ì#›Órõ@«$›Órõ@%›Órõ@«$›Órõ@«$›Órõ@Ì#›Órõ@ê"›Órõ@Ì#›Órõ@«$›Órõ@%›Órõ@Ì#›Órõ@ê"›Órõ@«$›Órõ@%›Órõ@ê"›Órõ@%›Órõ@Ì#›Órõ@ê"›Órõ@«$›Órõ@«$›Órõ@«$›Órõ@Ì#›Órõ@ê"›Órõ@«$›Órõ@%›Órõ@Ì#›Órõ@Ì#›Órõ@«$›Órõ@«$›Órõ@«$›Órõ@«$›Órõ@«$›Órõ@«$›Órõ@n&›Órõ@Ì#›Órõ@%›Órõ@%›Órõ@Ì#›Órõ@«$›Órõ@Ì#›Órõ@«$›Órõ@Ì#›Órõ@%›Órõ@«$›Órõ@%›Órõ@«$›Órõ@«$›Órõ@«$›Órõ@ê"›Órõ@ê"›Órõ@«$›Órõ@Ì#›Órõ@Ì#›Órõ@Ì#›Órõ@%›Órõ@Ì#›Órõ@Ì#›Órõ@«$›Órõ@%›Órõ@«$›Órõ@«$›Órõ@Ì#›Órõ@n&›Órõ@%›Órõ@ê"›Órõ@«$›Órõ@Ì#›Órõ@«$›Órõ@);
+    }
+    frontAndBack
+    {
+        type            empty;
+    }
+}
+
+
+// ************************************************************************* //

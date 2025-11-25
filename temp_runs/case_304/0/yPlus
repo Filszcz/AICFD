@@ -1,0 +1,185 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+  =========                 |
+  \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
+   \\    /   O peration     | Website:  https://openfoam.org
+    \\  /    A nd           | Version:  13
+     \\/     M anipulation  |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    format      binary;
+    class       volScalarField;
+    location    "0";
+    object      yPlus;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+dimensions      [];
+
+internalField   uniform 0;
+
+boundaryField
+{
+    inlet
+    {
+        type            calculated;
+        value           uniform 0;
+    }
+    outlet
+    {
+        type            calculated;
+        value           uniform 0;
+    }
+    walls
+    {
+        type            calculated;
+        value           nonuniform List<scalar> 
+606
+(›PÎcsú@ÒQÎcsú@
+SÎcsú@ATÎcsú@
+SÎcsú@›PÎcsú@ÒQÎcsú@
+SÎcsú@ÒQÎcsú@
+SÎcsú@dOÎcsú@›PÎcsú@›PÎcsú@ÒQÎcsú@ÒQÎcsú@
+SÎcsú@ATÎcsú@dOÎcsú@ÒQÎcsú@ÒQÎcsú@›PÎcsú@ÒQÎcsú@›PÎcsú@dOÎcsú@ÒQÎcsú@
+SÎcsú@dOÎcsú@
+SÎcsú@ÒQÎcsú@dOÎcsú@ÒQÎcsú@ÒQÎcsú@dOÎcsú@›PÎcsú@
+SÎcsú@ÒQÎcsú@
+SÎcsú@ÒQÎcsú@›PÎcsú@ÒQÎcsú@
+SÎcsú@›PÎcsú@
+SÎcsú@ÒQÎcsú@ATÎcsú@
+SÎcsú@ÒQÎcsú@ATÎcsú@›PÎcsú@ÒQÎcsú@ATÎcsú@zUÎcsú@›PÎcsú@ÒQÎcsú@ÒQÎcsú@ÒQÎcsú@ÒQÎcsú@ATÎcsú@
+SÎcsú@›PÎcsú@ÒQÎcsú@›PÎcsú@
+SÎcsú@
+SÎcsú@ÒQÎcsú@ÒQÎcsú@,NÎcsú@›PÎcsú@
+SÎcsú@›PÎcsú@ÒQÎcsú@ÒQÎcsú@ÒQÎcsú@ÒQÎcsú@ÒQÎcsú@dOÎcsú@ÒQÎcsú@ÒQÎcsú@
+SÎcsú@ÒQÎcsú@ÒQÎcsú@ÒQÎcsú@ÒQÎcsú@ÒQÎcsú@ÒQÎcsú@ÒQÎcsú@ATÎcsú@›PÎcsú@ÒQÎcsú@
+SÎcsú@
+SÎcsú@ÒQÎcsú@
+SÎcsú@
+SÎcsú@
+SÎcsú@ÒQÎcsú@
+SÎcsú@dOÎcsú@ÒQÎcsú@ÒQÎcsú@
+SÎcsú@ATÎcsú@
+SÎcsú@›PÎcsú@›PÎcsú@ÒQÎcsú@ÒQÎcsú@›PÎcsú@
+SÎcsú@ATÎcsú@ATÎcsú@
+SÎcsú@›PÎcsú@
+SÎcsú@ÒQÎcsú@›PÎcsú@ÒQÎcsú@
+SÎcsú@ÒQÎcsú@›PÎcsú@
+SÎcsú@ÒQÎcsú@
+SÎcsú@ÒQÎcsú@
+SÎcsú@ATÎcsú@ÒQÎcsú@ÒQÎcsú@ÒQÎcsú@ÒQÎcsú@
+SÎcsú@
+SÎcsú@ÒQÎcsú@
+SÎcsú@›PÎcsú@ATÎcsú@ÒQÎcsú@›PÎcsú@
+SÎcsú@
+SÎcsú@
+SÎcsú@
+SÎcsú@
+SÎcsú@
+SÎcsú@ÒQÎcsú@
+SÎcsú@ÒQÎcsú@ÒQÎcsú@›PÎcsú@
+SÎcsú@›PÎcsú@ATÎcsú@
+SÎcsú@ÒQÎcsú@
+SÎcsú@ÒQÎcsú@ÒQÎcsú@ÒQÎcsú@ATÎcsú@›PÎcsú@ÒQÎcsú@ÒQÎcsú@›PÎcsú@
+SÎcsú@
+SÎcsú@›PÎcsú@ÒQÎcsú@ÒQÎcsú@›PÎcsú@
+SÎcsú@
+SÎcsú@›PÎcsú@›PÎcsú@›PÎcsú@ÒQÎcsú@ÒQÎcsú@dOÎcsú@
+SÎcsú@›PÎcsú@ÒQÎcsú@ÒQÎcsú@›PÎcsú@
+SÎcsú@›PÎcsú@
+SÎcsú@ÒQÎcsú@
+SÎcsú@
+SÎcsú@ÒQÎcsú@›PÎcsú@›PÎcsú@dOÎcsú@ÒQÎcsú@
+SÎcsú@ÒQÎcsú@›PÎcsú@ÒQÎcsú@ÒQÎcsú@ÒQÎcsú@
+SÎcsú@dOÎcsú@
+SÎcsú@ÒQÎcsú@dOÎcsú@ÒQÎcsú@dOÎcsú@ÒQÎcsú@›PÎcsú@
+SÎcsú@ATÎcsú@ÒQÎcsú@ÒQÎcsú@ÒQÎcsú@ÒQÎcsú@ÒQÎcsú@›PÎcsú@›PÎcsú@ÒQÎcsú@›PÎcsú@›PÎcsú@ÒQÎcsú@dOÎcsú@ATÎcsú@›PÎcsú@ÒQÎcsú@
+SÎcsú@›PÎcsú@ÒQÎcsú@›PÎcsú@ÒQÎcsú@ÒQÎcsú@
+SÎcsú@dOÎcsú@dOÎcsú@ÒQÎcsú@dOÎcsú@›PÎcsú@
+SÎcsú@dOÎcsú@ÒQÎcsú@ÒQÎcsú@ATÎcsú@›PÎcsú@
+SÎcsú@ÒQÎcsú@›PÎcsú@ÒQÎcsú@ÒQÎcsú@›PÎcsú@
+SÎcsú@›PÎcsú@
+SÎcsú@
+SÎcsú@ÒQÎcsú@
+SÎcsú@ÒQÎcsú@dOÎcsú@ÒQÎcsú@dOÎcsú@ATÎcsú@ÒQÎcsú@›PÎcsú@
+SÎcsú@
+SÎcsú@ÒQÎcsú@ATÎcsú@ÒQÎcsú@
+SÎcsú@ÒQÎcsú@›PÎcsú@›PÎcsú@
+SÎcsú@ÒQÎcsú@
+SÎcsú@›PÎcsú@
+SÎcsú@
+SÎcsú@ÒQÎcsú@
+SÎcsú@dOÎcsú@ATÎcsú@
+SÎcsú@
+SÎcsú@
+SÎcsú@ÒQÎcsú@ÒQÎcsú@ÒQÎcsú@
+SÎcsú@›PÎcsú@ÒQÎcsú@›PÎcsú@ÒQÎcsú@ATÎcsú@›PÎcsú@›PÎcsú@zUÎcsú@
+SÎcsú@
+SÎcsú@ÒQÎcsú@
+SÎcsú@›PÎcsú@ÒQÎcsú@›PÎcsú@ATÎcsú@
+SÎcsú@›PÎcsú@›PÎcsú@›PÎcsú@ÒQÎcsú@
+SÎcsú@›PÎcsú@ÒQÎcsú@›PÎcsú@ÒQÎcsú@ÒQÎcsú@dOÎcsú@›PÎcsú@ÒQÎcsú@›PÎcsú@ÒQÎcsú@ÒQÎcsú@›PÎcsú@
+SÎcsú@
+SÎcsú@›PÎcsú@
+SÎcsú@›PÎcsú@›PÎcsú@
+SÎcsú@ÒQÎcsú@ÒQÎcsú@ÒQÎcsú@dOÎcsú@ÒQÎcsú@
+SÎcsú@›PÎcsú@›PÎcsú@ÒQÎcsú@ÒQÎcsú@ATÎcsú@ÒQÎcsú@ÒQÎcsú@ÒQÎcsú@ÒQÎcsú@dOÎcsú@ÒQÎcsú@ATÎcsú@›PÎcsú@ÒQÎcsú@ÒQÎcsú@›PÎcsú@
+SÎcsú@dOÎcsú@ÒQÎcsú@ÒQÎcsú@ÒQÎcsú@ÒQÎcsú@dOÎcsú@›PÎcsú@›PÎcsú@dOÎcsú@
+SÎcsú@zUÎcsú@
+SÎcsú@
+SÎcsú@dOÎcsú@dOÎcsú@ÒQÎcsú@ATÎcsú@›PÎcsú@›PÎcsú@›PÎcsú@ÒQÎcsú@›PÎcsú@dOÎcsú@ÒQÎcsú@ÒQÎcsú@ÒQÎcsú@dOÎcsú@›PÎcsú@dOÎcsú@ATÎcsú@dOÎcsú@
+SÎcsú@ÒQÎcsú@›PÎcsú@
+SÎcsú@ATÎcsú@
+SÎcsú@›PÎcsú@›PÎcsú@›PÎcsú@ÒQÎcsú@ÒQÎcsú@
+SÎcsú@›PÎcsú@ÒQÎcsú@dOÎcsú@ÒQÎcsú@›PÎcsú@,NÎcsú@
+SÎcsú@ÒQÎcsú@ÒQÎcsú@ÒQÎcsú@ÒQÎcsú@›PÎcsú@dOÎcsú@›PÎcsú@›PÎcsú@dOÎcsú@›PÎcsú@ATÎcsú@›PÎcsú@
+SÎcsú@›PÎcsú@›PÎcsú@ÒQÎcsú@ÒQÎcsú@›PÎcsú@
+SÎcsú@›PÎcsú@ÒQÎcsú@›PÎcsú@ÒQÎcsú@›PÎcsú@ÒQÎcsú@ÒQÎcsú@ÒQÎcsú@
+SÎcsú@ÒQÎcsú@›PÎcsú@›PÎcsú@
+SÎcsú@
+SÎcsú@
+SÎcsú@ÒQÎcsú@dOÎcsú@ÒQÎcsú@ÒQÎcsú@
+SÎcsú@
+SÎcsú@ÒQÎcsú@ÒQÎcsú@ÒQÎcsú@ÒQÎcsú@dOÎcsú@ÒQÎcsú@›PÎcsú@ÒQÎcsú@
+SÎcsú@ÒQÎcsú@ÒQÎcsú@ÒQÎcsú@ÒQÎcsú@ÒQÎcsú@›PÎcsú@
+SÎcsú@dOÎcsú@ÒQÎcsú@
+SÎcsú@ÒQÎcsú@ÒQÎcsú@dOÎcsú@›PÎcsú@›PÎcsú@›PÎcsú@›PÎcsú@›PÎcsú@
+SÎcsú@›PÎcsú@
+SÎcsú@
+SÎcsú@ÒQÎcsú@ÒQÎcsú@ÒQÎcsú@
+SÎcsú@›PÎcsú@
+SÎcsú@›PÎcsú@ÒQÎcsú@›PÎcsú@›PÎcsú@ÒQÎcsú@
+SÎcsú@ATÎcsú@›PÎcsú@ÒQÎcsú@
+SÎcsú@ÒQÎcsú@›PÎcsú@
+SÎcsú@ÒQÎcsú@ÒQÎcsú@ÒQÎcsú@ÒQÎcsú@ATÎcsú@ATÎcsú@›PÎcsú@
+SÎcsú@ÒQÎcsú@›PÎcsú@
+SÎcsú@›PÎcsú@›PÎcsú@ÒQÎcsú@ATÎcsú@ÒQÎcsú@
+SÎcsú@›PÎcsú@›PÎcsú@
+SÎcsú@ÒQÎcsú@ÒQÎcsú@ÒQÎcsú@ÒQÎcsú@
+SÎcsú@
+SÎcsú@ÒQÎcsú@
+SÎcsú@ÒQÎcsú@›PÎcsú@ÒQÎcsú@ATÎcsú@
+SÎcsú@
+SÎcsú@ATÎcsú@ATÎcsú@ATÎcsú@
+SÎcsú@›PÎcsú@ÒQÎcsú@
+SÎcsú@ÒQÎcsú@ÒQÎcsú@
+SÎcsú@ÒQÎcsú@ÒQÎcsú@
+SÎcsú@dOÎcsú@
+SÎcsú@ÒQÎcsú@›PÎcsú@ÒQÎcsú@ÒQÎcsú@ÒQÎcsú@›PÎcsú@ÒQÎcsú@dOÎcsú@›PÎcsú@
+SÎcsú@›PÎcsú@›PÎcsú@›PÎcsú@
+SÎcsú@ATÎcsú@
+SÎcsú@›PÎcsú@ÒQÎcsú@
+SÎcsú@zUÎcsú@ATÎcsú@ATÎcsú@›PÎcsú@ÒQÎcsú@
+SÎcsú@›PÎcsú@›PÎcsú@
+SÎcsú@ÒQÎcsú@ATÎcsú@
+SÎcsú@›PÎcsú@ÒQÎcsú@›PÎcsú@ÒQÎcsú@ÒQÎcsú@ÒQÎcsú@ÒQÎcsú@
+SÎcsú@ÒQÎcsú@›PÎcsú@›PÎcsú@ÒQÎcsú@›PÎcsú@ÒQÎcsú@ÒQÎcsú@ÒQÎcsú@ÒQÎcsú@›PÎcsú@›PÎcsú@ATÎcsú@ÒQÎcsú@›PÎcsú@›PÎcsú@ÒQÎcsú@ÒQÎcsú@ATÎcsú@›PÎcsú@›PÎcsú@ÒQÎcsú@ÒQÎcsú@ÒQÎcsú@ÒQÎcsú@ÒQÎcsú@ÒQÎcsú@);
+    }
+    frontAndBack
+    {
+        type            empty;
+    }
+}
+
+
+// ************************************************************************* //

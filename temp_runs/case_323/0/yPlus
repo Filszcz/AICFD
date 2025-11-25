@@ -1,0 +1,47 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+  =========                 |
+  \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
+   \\    /   O peration     | Website:  https://openfoam.org
+    \\  /    A nd           | Version:  13
+     \\/     M anipulation  |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    format      binary;
+    class       volScalarField;
+    location    "0";
+    object      yPlus;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+dimensions      [];
+
+internalField   uniform 0;
+
+boundaryField
+{
+    inlet
+    {
+        type            calculated;
+        value           uniform 0;
+    }
+    outlet
+    {
+        type            calculated;
+        value           uniform 0;
+    }
+    walls
+    {
+        type            calculated;
+        value           nonuniform List<scalar> 
+530
+(²FP@²FP@¬±FP@ø´FP@%´FP@¬±FP@°FP@²FP@%´FP@%´FP@²FP@%´FP@R³FP@%´FP@¬±FP@%´FP@²FP@ø´FP@%´FP@Ù°FP@¬±FP@%´FP@²FP@%´FP@R³FP@R³FP@ø´FP@R³FP@%´FP@R³FP@¬±FP@R³FP@R³FP@¬±FP@R³FP@%´FP@²FP@%´FP@R³FP@Ù°FP@²FP@%´FP@²FP@%´FP@R³FP@R³FP@ø´FP@²FP@%´FP@²FP@R³FP@R³FP@²FP@²FP@R³FP@²FP@²FP@²FP@¬±FP@R³FP@²FP@²FP@²FP@Ù°FP@²FP@R³FP@R³FP@²FP@R³FP@%´FP@²FP@¬±FP@R³FP@²FP@¬±FP@²FP@R³FP@Ù°FP@R³FP@ž¶FP@%´FP@Ù°FP@R³FP@¬±FP@²FP@%´FP@ø´FP@R³FP@¬±FP@R³FP@Ù°FP@²FP@²FP@²FP@²FP@R³FP@Ù°FP@R³FP@%´FP@R³FP@R³FP@²FP@R³FP@¬±FP@R³FP@R³FP@ø´FP@R³FP@²FP@Ù°FP@²FP@%´FP@Ù°FP@²FP@%´FP@ø´FP@%´FP@R³FP@¬±FP@²FP@%´FP@¬±FP@²FP@%´FP@²FP@R³FP@R³FP@R³FP@²FP@%´FP@²FP@¬±FP@%´FP@²FP@²FP@²FP@²FP@R³FP@R³FP@%´FP@²FP@R³FP@R³FP@%´FP@²FP@R³FP@%´FP@%´FP@²FP@²FP@¬±FP@R³FP@²FP@R³FP@R³FP@R³FP@R³FP@R³FP@R³FP@%´FP@ø´FP@%´FP@ø´FP@R³FP@R³FP@²FP@R³FP@²FP@%´FP@R³FP@Ù°FP@R³FP@Ù°FP@R³FP@R³FP@%´FP@%´FP@R³FP@%´FP@²FP@¬±FP@ø´FP@R³FP@²FP@²FP@¬±FP@%´FP@R³FP@¬±FP@²FP@R³FP@ø´FP@%´FP@%´FP@R³FP@%´FP@¬±FP@R³FP@R³FP@R³FP@²FP@R³FP@²FP@%´FP@%´FP@R³FP@ø´FP@ø´FP@R³FP@²FP@ø´FP@ø´FP@¬±FP@²FP@¬±FP@R³FP@%´FP@ø´FP@²FP@%´FP@%´FP@²FP@%´FP@¬±FP@¬±FP@R³FP@ø´FP@ø´FP@ËµFP@%´FP@ËµFP@R³FP@²FP@%´FP@%´FP@%´FP@R³FP@ËµFP@²FP@¬±FP@%´FP@²FP@¬±FP@²FP@Ù°FP@ø´FP@ËµFP@ø´FP@²FP@%´FP@%´FP@%´FP@%´FP@%´FP@%´FP@²FP@%´FP@Ù°FP@ø´FP@²FP@²FP@R³FP@ø´FP@R³FP@%´FP@R³FP@ø´FP@²FP@¬±FP@¬±FP@²FP@²FP@R³FP@R³FP@²FP@%´FP@R³FP@R³FP@%´FP@R³FP@%´FP@²FP@²FP@²FP@²FP@R³FP@%´FP@R³FP@¬±FP@R³FP@ø´FP@²FP@ø´FP@R³FP@Ù°FP@%´FP@R³FP@²FP@¬±FP@R³FP@ËµFP@R³FP@R³FP@Ù°FP@R³FP@ø´FP@ø´FP@¬±FP@%´FP@%´FP@R³FP@R³FP@²FP@¬±FP@¬±FP@R³FP@R³FP@²FP@ø´FP@R³FP@%´FP@²FP@²FP@R³FP@R³FP@ø´FP@²FP@²FP@R³FP@¬±FP@¬±FP@%´FP@R³FP@²FP@R³FP@R³FP@²FP@²FP@R³FP@R³FP@ËµFP@ø´FP@¬±FP@¬±FP@%´FP@²FP@Ù°FP@R³FP@%´FP@R³FP@²FP@R³FP@²FP@R³FP@R³FP@¬±FP@²FP@¬±FP@²FP@°FP@R³FP@ø´FP@ø´FP@R³FP@R³FP@%´FP@¬±FP@²FP@²FP@²FP@%´FP@R³FP@²FP@R³FP@R³FP@²FP@²FP@R³FP@ø´FP@%´FP@R³FP@¬±FP@R³FP@%´FP@R³FP@%´FP@R³FP@R³FP@%´FP@R³FP@R³FP@²FP@°FP@¬±FP@%´FP@²FP@R³FP@²FP@¬±FP@ø´FP@R³FP@%´FP@²FP@R³FP@R³FP@R³FP@¬±FP@¬±FP@R³FP@ø´FP@¬±FP@R³FP@%´FP@²FP@R³FP@%´FP@%´FP@R³FP@R³FP@R³FP@²FP@R³FP@R³FP@R³FP@¬±FP@R³FP@¬±FP@R³FP@²FP@¬±FP@R³FP@R³FP@R³FP@R³FP@R³FP@ø´FP@²FP@²FP@ø´FP@ø´FP@²FP@ø´FP@R³FP@%´FP@R³FP@ø´FP@%´FP@²FP@R³FP@%´FP@R³FP@R³FP@%´FP@%´FP@²FP@ø´FP@¬±FP@²FP@%´FP@%´FP@¬±FP@¬±FP@²FP@R³FP@%´FP@R³FP@%´FP@R³FP@%´FP@¬±FP@%´FP@²FP@R³FP@%´FP@²FP@ø´FP@R³FP@²FP@%´FP@²FP@¬±FP@R³FP@%´FP@²FP@R³FP@%´FP@Ù°FP@R³FP@¬±FP@ø´FP@%´FP@R³FP@ø´FP@R³FP@¬±FP@ø´FP@%´FP@¬±FP@²FP@%´FP@%´FP@R³FP@²FP@ø´FP@²FP@¬±FP@²FP@ËµFP@R³FP@ø´FP@%´FP@R³FP@ø´FP@Ù°FP@¬±FP@²FP@¬±FP@R³FP@%´FP@²FP@%´FP@²FP@²FP@²FP@²FP@²FP@%´FP@ËµFP@ËµFP@²FP@);
+    }
+    frontAndBack
+    {
+        type            empty;
+    }
+}
+
+
+// ************************************************************************* //
