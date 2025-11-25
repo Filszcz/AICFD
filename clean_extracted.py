@@ -3,7 +3,7 @@ import shutil
 import sys
 
 # TARGET FOLDERS
-TARGETS = ["sample_visualization"]
+TARGETS = ["extracted_data"]
 
 def clean_vis():
     print(f"WARNING: You are about to DELETE the directories: {TARGETS}")
