@@ -34,8 +34,7 @@ Unlike traditional datasets that interpolate results onto a fixed image grid, th
 *   **Visualization:** Paraview 5.10+.
 
 ### Hardware
-*   **CPU:** Configured for **12 Physical Cores** (SMT/Hyperthreading avoided for solver stability).
-*   **Storage:** ~50-70 GB free space recommended.
+*   **CPU:** Configured for **12 Physical Cores**, `N_CORES` variable.
 
 ---
 
