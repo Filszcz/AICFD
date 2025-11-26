@@ -5,16 +5,14 @@ FoamFile
     class       dictionary;
     object      controlDict;
 }
-// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
-
 application     simpleFoam;
 startFrom       latestTime;
 startTime       0;
 stopAt          endTime;
-endTime         2000;
+endTime         1000;
 deltaT          1;
 writeControl    runTime;
-writeInterval   2000;
+writeInterval   1000;
 purgeWrite      1;
 writeFormat     binary;
 writePrecision  6;
@@ -25,4 +23,11 @@ runTimeModifiable true;
 
 functions
 {
+    yPlus1
+    {
+        type            yPlus;
+        libs            ("libfieldFunctionObjects.so");
+        executeControl  writeTime;
+        writeControl    writeTime;
+    }
 }

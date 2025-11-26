@@ -14,7 +14,7 @@ os.makedirs(os.path.join(BASE_DIR, "system"))
 
 # --- WRITE SYSTEM FILES ---
 
-# ControlDict (Minimal Header)
+# ControlDict (Includes yPlus now)
 control_dict = """FoamFile
 {
     version     2.0;
@@ -22,16 +22,14 @@ control_dict = """FoamFile
     class       dictionary;
     object      controlDict;
 }
-// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
-
 application     simpleFoam;
 startFrom       latestTime;
 startTime       0;
 stopAt          endTime;
-endTime         2000;
+endTime         1000;
 deltaT          1;
 writeControl    runTime;
-writeInterval   2000;
+writeInterval   1000;
 purgeWrite      1;
 writeFormat     binary;
 writePrecision  6;
@@ -42,10 +40,17 @@ runTimeModifiable true;
 
 functions
 {
+    yPlus1
+    {
+        type            yPlus;
+        libs            ("libfieldFunctionObjects.so");
+        executeControl  writeTime;
+        writeControl    writeTime;
+    }
 }
 """
 
-# fvSchemes (Standard RANS)
+# fvSchemes
 fv_schemes = """FoamFile
 {
     version     2.0;
@@ -53,16 +58,8 @@ fv_schemes = """FoamFile
     class       dictionary;
     object      fvSchemes;
 }
-// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
-
-ddtSchemes
-{
-    default         steadyState;
-}
-gradSchemes
-{
-    default         Gauss linear;
-}
+ddtSchemes { default steadyState; }
+gradSchemes { default Gauss linear; }
 divSchemes
 {
     default         none;
@@ -72,21 +69,13 @@ divSchemes
     div(phi,omega)  bounded Gauss upwind;
     div((nuEff*dev2(T(grad(U))))) Gauss linear;
 }
-laplacianSchemes
-{
-    default         Gauss linear corrected;
-}
-interpolationSchemes
-{
-    default         linear;
-}
-snGradSchemes
-{
-    default         corrected;
-}
+laplacianSchemes { default Gauss linear corrected; }
+interpolationSchemes { default linear; }
+snGradSchemes { default corrected; }
+wallDist { method meshWave; correctWalls true; }
 """
 
-# fvSolution (Relaxation Factors for stability)
+# fvSolution
 fv_solution = """FoamFile
 {
     version     2.0;
@@ -94,8 +83,6 @@ fv_solution = """FoamFile
     class       dictionary;
     object      fvSolution;
 }
-// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
-
 solvers
 {
     p
@@ -119,7 +106,6 @@ SIMPLE
     consistent      yes;
     pRefCell        0;
     pRefValue       0;
-    
     residualControl
     {
         p               1e-4;
@@ -148,8 +134,6 @@ turb_props = """FoamFile
     class       dictionary;
     object      turbulenceProperties;
 }
-// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
-
 simulationType  RAS;
 RAS
 {
@@ -159,7 +143,7 @@ RAS
 }
 """
 
-# transportProperties (Viscosity for Air)
+# transportProperties
 trans_props = """FoamFile
 {
     version     2.0;
@@ -167,14 +151,11 @@ trans_props = """FoamFile
     class       dictionary;
     object      transportProperties;
 }
-// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
-
 transportModel  Newtonian;
 nu              [0 2 -1 0 0 0 0] 1.5e-05;
 """
 
 # --- WRITE FILES TO DISK ---
-
 def write_file(path, content):
     with open(path, "w") as f:
         f.write(content)
@@ -186,4 +167,4 @@ write_file(os.path.join(BASE_DIR, "system", "fvSolution"), fv_solution)
 write_file(os.path.join(BASE_DIR, "constant", "turbulenceProperties"), turb_props)
 write_file(os.path.join(BASE_DIR, "constant", "transportProperties"), trans_props)
 
-print("\nTemplate Reset Complete. Ready for debugging.")
+print("\nTemplate Reset Complete (With yPlus & Correct Folders).")
