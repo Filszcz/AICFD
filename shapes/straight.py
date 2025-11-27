@@ -1,5 +1,6 @@
 
-def generate(L, D, dens_mult):
+def generate(L, D, dens_mult, **kwargs):
+    # kwargs: None used, but kept for compatibility
     r, z = D / 2.0, 0.05
     base_y = int(20 * dens_mult)
     if base_y % 2 != 0: base_y += 1
