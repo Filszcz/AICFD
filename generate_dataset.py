@@ -10,16 +10,18 @@ import textwrap
 import math
 import sys
 
+# THE T INLETS AND OUTLETS ARE IN THE WRONG PLACES, WILL FIX LATER!!!!
+
 # --- Configuration ---
 TEMPLATE_DIR = "base_template"
 OUTPUT_DIR = "data_output"
 N_CORES = 10
 
 # Parameter Ranges
-lengths = np.linspace(5, 20, 4) 
-diameters = np.linspace(0.5, 2.0, 3)
-velocities = np.linspace(0.5, 3, 3)
-refinements = [1] 
+lengths = np.linspace(5, 10, 2) 
+diameters = np.linspace(0.5, 2.0, 2)
+velocities = np.linspace(1, 3, 2)
+refinements = [0, 2] 
 
 # Shapes:
 # straight:   Pipe
@@ -30,6 +32,7 @@ refinements = [1]
 # taper_in:   Constriction
 # taper_out:  Expansion
 SHAPES = ["straight", "bend", "bend45", "tee_split", "tee_opposed", "taper_in", "taper_out"]
+
 
 TURB_INTENSITY = 0.05
 C_MU = 0.09

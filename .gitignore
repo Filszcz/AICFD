@@ -2,3 +2,6 @@ data_output/
 debug_run/
 extracted_data/
 temp_runs/
+extracted_data_csv/
+weights/
+wandb/
