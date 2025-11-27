@@ -1,29 +1,36 @@
 
-def generate(L, D, dens_mult, **kwargs):
-    # kwargs: 'throat_ratio' (0.3 to 0.7)
-    
+import math
+
+def get_cells(length, cell_size, min_cells=2):
+    if length <= 1e-6: return 1
+    val = int(length / cell_size)
+    return max(min_cells, val)
+
+def generate(L, D, cell_size, **kwargs):
     beta = kwargs.get('throat_ratio', 0.5)
-    
+    lc_r = kwargs.get('conv_len_ratio', 0.25)
+    ld_r = kwargs.get('div_len_ratio', 0.5)
     r_in = D / 2.0
     r_throat = (D * beta) / 2.0
     z = 0.05
     
-    l_conv = 0.25 * L
-    l_throat = 0.15 * L
-    l_div = 0.6 * L
+    l_conv = lc_r * L
+    l_div = ld_r * L
+    l_throat = L - l_conv - l_div
+    if l_throat < 0.05 * L:
+        l_throat = 0.05 * L
+        scale = (L - l_throat) / (l_conv + l_div)
+        l_conv *= scale
+        l_div *= scale
     
     x0, x1 = 0, l_conv
     x2 = l_conv + l_throat
     x3 = L
     
-    ny = int(20 * dens_mult)
-    nx1 = int((l_conv/D) * ny)
-    nx2 = int((l_throat/D) * ny)
-    nx3 = int((l_div/D) * ny)
-    
-    if nx1 < 2: nx1 = 2
-    if nx2 < 2: nx2 = 2
-    if nx3 < 2: nx3 = 2
+    nx1 = get_cells(l_conv, cell_size)
+    nx2 = get_cells(l_throat, cell_size)
+    nx3 = get_cells(l_div, cell_size)
+    ny = get_cells(D, cell_size, min_cells=10)
 
     return f'''
         vertices

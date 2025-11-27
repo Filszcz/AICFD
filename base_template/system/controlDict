@@ -23,10 +23,11 @@ runTimeModifiable true;
 
 functions
 {
+    // yPlus is supported in OpenFOAM 13
     yPlus1
     {
         type            yPlus;
-        libs            ("libfieldFunctionObjects.so");
+        libs            ("libfieldFunctionObjects.so"); // Try generic lib, if fails it's often autoloaded
         executeControl  writeTime;
         writeControl    writeTime;
     }

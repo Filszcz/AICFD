@@ -17,50 +17,52 @@ def process_npz_to_npy():
     print(f"Found {len(files)} .npz files. Converting to Point Cloud .npy...")
     print("Output Format: [x, y, z, u, v, w, p, y_wall, is_fluid, is_wall, is_inlet, is_outlet]")
 
+    count = 0
     for i, f in enumerate(files):
         try:
-            # 1. Load Data
-            data = np.load(f)
+            # 1. Load Data (allow_pickle=True needed if metadata dicts are present)
+            loaded = np.load(f, allow_pickle=True)
             
-            # 2. Extract Fields (Raw Point Cloud Data)
-            # These are already in shape (N, 3) or (N,)
-            pos = data['pos']  # (N, 3)
-            U = data['U']      # (N, 3)
-            
-            # Reshape scalars to (N, 1) for stacking
-            p = data['p'].reshape(-1, 1)
-            y_dist = data['y'].reshape(-1, 1)
-            
-            # Type is already (N, 4)
-            types = data['type']
+            final_array = None
 
-            # 3. Stack into single matrix (N, 12)
-            # Columns: 
-            # 0-2:   Position (x,y,z)
-            # 3-5:   Velocity (u,v,w)
-            # 6:     Pressure
-            # 7:     Wall Distance
-            # 8-11: Type (Fluid, Wall, Inlet, Outlet)
-            
-            final_array = np.hstack((
-                pos, 
-                U, 
-                p, 
-                y_dist, 
-                types
-            ))
-            
-            # 4. Save
+            # --- CASE A: New Format (Single 'data' array) ---
+            if 'data' in loaded:
+                final_array = loaded['data']
+                
+                # Validation check
+                if final_array.shape[1] != 12:
+                    print(f"Skipping {f.name}: Expected 12 columns, found {final_array.shape[1]}")
+                    continue
+
+            # --- CASE B: Old Format (Separate arrays 'pos', 'U', etc.) ---
+            elif 'pos' in loaded:
+                # Reconstruct the stack for legacy files
+                pos = loaded['pos']       # (N, 3)
+                U = loaded['U']           # (N, 3)
+                p = loaded['p'].reshape(-1, 1)
+                y_dist = loaded['y'].reshape(-1, 1)
+                types = loaded['type']    # (N, 4)
+                
+                final_array = np.hstack((pos, U, p, y_dist, types))
+
+            else:
+                print(f"Skipping {f.name}: Unknown file structure.")
+                continue
+
+            # 2. Save
+            # Save as .npy for fast loading in PyTorch/TensorFlow
             save_name = OUTPUT_DIR / f"{f.stem}.npy"
             np.save(save_name, final_array)
             
-            if i % 100 == 0:
-                print(f"[{i}/{len(files)}] Converted {f.name} (N={pos.shape[0]})")
+            count += 1
+            if count % 50 == 0:
+                print(f"[{i+1}/{len(files)}] Converted {f.name} (N={final_array.shape[0]})")
 
         except Exception as e:
             print(f"Error converting {f.name}: {e}")
 
     print("\nConversion Complete.")
+    print(f"Successfully converted {count} files.")
     print(f"Data saved to: {OUTPUT_DIR.absolute()}")
 
 if __name__ == "__main__":

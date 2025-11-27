@@ -14,7 +14,7 @@ os.makedirs(os.path.join(BASE_DIR, "system"))
 
 # --- WRITE SYSTEM FILES ---
 
-# ControlDict (Includes yPlus now)
+# ControlDict (Cleaned: Removed incompatible wallDist function)
 control_dict = """FoamFile
 {
     version     2.0;
@@ -40,17 +40,18 @@ runTimeModifiable true;
 
 functions
 {
+    // yPlus is supported in OpenFOAM 13
     yPlus1
     {
         type            yPlus;
-        libs            ("libfieldFunctionObjects.so");
+        libs            ("libfieldFunctionObjects.so"); // Try generic lib, if fails it's often autoloaded
         executeControl  writeTime;
         writeControl    writeTime;
     }
 }
 """
 
-# fvSchemes
+# fvSchemes (Correct wallDist method for OpenFOAM 13)
 fv_schemes = """FoamFile
 {
     version     2.0;
@@ -72,6 +73,8 @@ divSchemes
 laplacianSchemes { default Gauss linear corrected; }
 interpolationSchemes { default linear; }
 snGradSchemes { default corrected; }
+
+// Internal calculation method for turbulence models
 wallDist { method meshWave; correctWalls true; }
 """
 
@@ -167,4 +170,4 @@ write_file(os.path.join(BASE_DIR, "system", "fvSolution"), fv_solution)
 write_file(os.path.join(BASE_DIR, "constant", "turbulenceProperties"), turb_props)
 write_file(os.path.join(BASE_DIR, "constant", "transportProperties"), trans_props)
 
-print("\nTemplate Reset Complete (With yPlus & Correct Folders).")
+print("\nTemplate Reset Complete (Safe configuration).")

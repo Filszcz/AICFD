@@ -1,10 +1,15 @@
 
-def generate(L, D, dens_mult, **kwargs):
-    # kwargs: None used, but kept for compatibility
+import math
+
+def get_cells(length, cell_size, min_cells=2):
+    if length <= 1e-6: return 1
+    val = int(length / cell_size)
+    return max(min_cells, val)
+
+def generate(L, D, cell_size, **kwargs):
     r, z = D / 2.0, 0.05
-    base_y = int(20 * dens_mult)
-    if base_y % 2 != 0: base_y += 1
-    x_cells = int((L / D) * base_y)
+    nx = get_cells(L, cell_size)
+    ny = get_cells(D, cell_size, min_cells=10)
     
     return f'''
         vertices
@@ -12,8 +17,7 @@ def generate(L, D, dens_mult, **kwargs):
             (0 {-r} {-z}) ({L} {-r} {-z}) ({L} {r} {-z}) (0 {r} {-z})
             (0 {-r} {z}) ({L} {-r} {z}) ({L} {r} {z}) (0 {r} {z})
         );
-        blocks ( hex (0 1 2 3 4 5 6 7) ({x_cells} {base_y} 1) simpleGrading (1 1 1) );
-        edges ();
+        blocks ( hex (0 1 2 3 4 5 6 7) ({nx} {ny} 1) simpleGrading (1 1 1) );
         boundary
         (
             inlet  {{ type patch; faces ((0 4 7 3)); }}
