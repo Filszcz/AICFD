@@ -118,16 +118,6 @@ The training pipeline includes several stability improvements:
 4. **Masked Loss**: Only computes loss on fluid cells (excludes boundaries)
 5. **Auto Offline Mode**: Falls back to offline wandb if no API key
 
-## Performance Expectations
-
-| Metric | Value |
-|--------|-------|
-| Dataset Size | 300 samples (~150 MB) |
-| Generation Time | 2-6 hours (10 cores) |
-| Training Time | 6-12 hours (GPU, 500 epochs) |
-| Best Val Loss | 0.02-0.04 (normalized MSE) |
-| Model Parameters | ~1.5M (scaling=1.0) |
-
 ## Troubleshooting
 
 **OpenFOAM not found**
