@@ -1,140 +1,175 @@
-# Deep Learning CFD Dataset Generator (Raw Point Cloud Edition)
+# AICFD - AI-Powered CFD Flow Prediction
 
-## Project Overview
-This framework automates the generation of a massive Computational Fluid Dynamics (CFD) dataset (78,125 cases) designed for **Geometric Deep Learning**.
+A machine learning pipeline for predicting fluid flow fields in pipe geometries using PointNet neural networks trained on OpenFOAM CFD simulation data.
 
-Unlike traditional datasets that interpolate results onto a fixed image grid, this generator extracts the **Exact Raw Mesh Centers** from OpenFOAM. This ensures:
-1.  **Physics Fidelity:** No interpolation loss; data represents the exact solver output.
-2.  **Variable Resolution:** Point clouds vary in size ($N$) based on geometry and refinement level.
-3.  **True 2D Topology:** Explicitly excludes simulation thickness layers, providing a clean 2D plane ($z=0$).
-4.  **Boundary Awareness:** Includes inlet, outlet, and wall nodes with one-hot encoded tags.
+## Overview
 
-## Simulation Specifications
-*   **Physics:** Steady-State Incompressible Flow (RANS $k-\epsilon$).
-*   **Solver:** OpenFOAM v13 (`simpleFoam`).
-*   **Geometry:** 2D Pipe with parametric Length ($L$) and Diameter ($D$).
-*   **Meshing:** `blockMesh` with **Boundary Layer Grading** (High density near walls).
-*   **Refinement Strategy:** **Exponential ($2.0^N$)**.
-    *   Level 0: 1x Base Density.
-    *   Level 4: 16x Base Density (Ultra-fine).
+This project generates synthetic CFD datasets across various pipe geometries (straight, bends, valves, obstacles, venturi, manifolds) and trains a PointNet model to predict velocity and pressure fields from 3D point clouds.
 
----
+## Workflow
 
-## 1. Prerequisites
+The complete pipeline consists of **four sequential steps**:
 
-### Software
-*   **OS:** Ubuntu 22.04 / 24.04.
-*   **CFD Solver:** OpenFOAM v13 (Foundation Release).
-    *   *Must support `yPlus` with `meshWave` method.*
-*   **Python:** 3.12 (via Miniconda/Anaconda).
-*   **Visualization:** Paraview 5.10+.
-
-### Hardware
-*   **CPU:** Configured for **12 Physical Cores**, `N_CORES` variable.
-
----
-
-## 2. Installation
-
-1.  **Create Environment:**
-    ```bash
-    conda create -n AICFD python=3.12 -y
-    conda activate AICFD
-    ```
-
-2.  **Install Dependencies:**
-    ```bash
-    pip install numpy pyvista scipy
-    ```
-
-3.  **Source OpenFOAM:**
-    (Add to `~/.bashrc` if not already present)
-    ```bash
-    source /opt/openfoam13/etc/bashrc
-    ```
-
----
-
-## 3. Project Files
-
-| Script | Function |
-| :--- | :--- |
-| `generate_dataset_raw.py` | **Main Generator.** Runs parallel simulations and saves `.npz`. |
-| `one_case.py` | **Verification.** Tests the solver/license on a single case. |
-| `check_raw_results.py` | **Visualization.** Converts `.npz` samples to `.vtp` for Paraview. |
-| `CLEAN_ALL.py` | **Master Cleanup.** Deletes data/temp files (Safety locked). |
-| `data_output/` | Directory where final `.npz` files are saved. |
-
----
-
-## 4. How to Run
-
-### Step 1: Verification
-Ensure OpenFOAM is correctly linked and the `yPlus` function object works.
+### 1. Setup Shape Generators
 ```bash
-python one_case.py
+python setup_shapes.py
 ```
-*   **Success:** Prints `VERIFICATION SUCCESSFUL`.
+- **Purpose**: Creates `shapes/` module with geometry generators
+- **Output**: Python files for 6 different pipe geometries
+- **Run once**: Only needed for initial setup
+- **Duration**: <1 second
 
-### Step 2: Generate Dataset
-Launch the production run.
+### 2. Reset OpenFOAM Template
 ```bash
-python generate_dataset_raw.py
+python reset_template.py
 ```
-*   **Configuration:** Runs on 12 Cores.
-*   **Progress:** Displays cases per second and status.
-*   **Output:** Files saved as `data_output/sim_L{L}_D{D}_U{U}_Ref{R}.npz`.
+- **Purpose**: Creates clean OpenFOAM case template
+- **Output**: `base_template/` directory with system files
+- **Run**: Before each dataset generation (optional)
+- **Duration**: <1 second
 
-### Step 3: Visualize Results
-Inspect random samples to ensure mesh quality and physics convergence.
+### 3. Generate CFD Dataset
 ```bash
-python check_raw_results.py
+python generate_dataset.py
 ```
-1.  Generates `.vtp` files in `sample_raw_viz/`.
-2.  Open these in **Paraview**.
-3.  Visualize `U` (Velocity) or `type` (Boundary tags). You will see the mesh density increase dramatically between Refinement levels.
+- **Purpose**: Runs 300 OpenFOAM simulations with varying parameters
+- **Output**: `.npy` files in `data_output/` (each ~200-1500 KB)
+- **Duration**: 2-6 hours (on 10 cores)
+- **Requirements**: OpenFOAM v13+ installed and sourced
+- **Configuration**: Edit lines 18-26 to adjust samples, cores, parameters
 
-### Step 4: Cleanup
-To delete all generated data and temp files:
+### 4. Train PointNet Model
 ```bash
-python CLEAN_ALL.py
+python train_pointnetv1.py
 ```
-*(Requires confirmation input: "YES IM SURE")*
+- **Purpose**: Trains neural network to predict flow from geometry
+- **Output**: `weights/best_model.pth` + training logs in `wandb/`
+- **Duration**: 6-12 hours (500 epochs on GPU)
+- **Requirements**: PyTorch with CUDA, wandb, matplotlib
+- **Configuration**: Edit `DEFAULT_CONFIG` (line 20-34) for hyperparameters
 
----
+## Requirements
 
-## 5. Data Format (`.npz`)
+### System Dependencies
+- **OpenFOAM**: v2312 or v13+ (for mesh generation and CFD solving)
+  - Ensure `blockMesh` and `simpleFoam` are in PATH
+- **Conda**: For Python environment management
 
-The data is stored as compressed NumPy arrays.
+### Python Environment (P12)
+```bash
+conda create -n P12 python=3.10
+conda activate P12
+pip install numpy scipy pyvista torch wandb matplotlib scikit-learn
+```
 
-**Loading Data:**
+**Key packages**:
+- `numpy`, `scipy`: Data processing
+- `pyvista`: OpenFOAM result reading
+- `torch`: PointNet training
+- `wandb`: Experiment tracking
+- `matplotlib`: Visualization
+
+## Configuration Guide
+
+### Dataset Generation (`generate_dataset.py`)
 ```python
-import numpy as np
-data = np.load("data_output/sim_case_0.npz")
-points = data['pos']  # (N, 3)
-velocity = data['U']  # (N, 3)
+N_CORES = 10                # Parallel workers (auto-limited to CPU count)
+SAMPLES_PER_SHAPE = 50      # Samples per geometry type
+LENGTHS = [10.0, 15.0]      # Pipe lengths (m)
+DIAMETERS = [1.0]           # Pipe diameters (m)  
+VELOCITIES = [1.0, 5.0]     # Inlet velocities (m/s)
+REFINEMENTS = [0, 1]        # Mesh refinement levels
 ```
 
-**Array Dictionary:**
+### Model Training (`train_pointnetv1.py`)
+```python
+batch_size = 8              # Batch size (reduce if OOM)
+learning_rate = 1e-4        # Initial learning rate
+epochs = 500                # Total training epochs
+scaling = 1.0               # Model width (0.25-2.0)
+val_split = 0.2             # Validation data ratio
+```
 
-| Key | Shape | Description |
-| :--- | :--- | :--- |
-| `pos` | $(N, 3)$ | Cell center coordinates $(x, y, 0)$. |
-| `U` | $(N, 3)$ | Velocity vector. |
-| `p` | $(N,)$ | Pressure field. |
-| `k` | $(N,)$ | Turbulent Kinetic Energy. |
-| `epsilon`| $(N,)$ | Turbulent Dissipation Rate. |
-| `y` | $(N,)$ | Wall Distance (computed via `meshWave`). |
-| `type` | $(N, 4)$ | Node Type One-Hot: `[Fluid, Wall, Inlet, Outlet]`. |
-| `L`, `D` | Scalar | Geometry parameters. |
-| `Ref` | Scalar | Refinement Level (0-4). |
+## Output Data Format
 
----
+### Dataset Files (`.npy`)
+Each file contains an `(N, 12)` array where N = number of mesh points:
 
-## 6. Configuration
+| Column | Description | Type |
+|--------|-------------|------|
+| 0-2 | x, y, z coordinates | float |
+| 3-5 | u, v, w velocity components | float |
+| 6 | p pressure | float |
+| 7 | y_wall (distance to wall) | float |
+| 8 | is_fluid flag | bool |
+| 9-11 | is_wall, is_inlet, is_outlet flags | bool |
 
-You can modify parameters in `generate_dataset_raw.py`:
+### Model Checkpoints
+- `weights/best_model.pth`: Best validation loss model
+- State dict format (use `model.load_state_dict()`)
 
-*   **`N_CORES = 12`**: Set to your CPU's physical core count.
-*   **`dens_mult = 2.0 ** ref_level`**: Controls mesh density scaling.
-*   **`base_y = 25`**: Base number of cells across the pipe diameter (Level 0).
+## Training Features
+
+The training pipeline includes several stability improvements:
+
+1. **Gradient Clipping**: Prevents gradient explosion (max_norm=1.0)
+2. **Target Normalization**: Velocity by magnitude, pressure by standard deviation
+3. **Learning Rate Scheduling**: ReduceLROnPlateau with patience=10
+4. **Masked Loss**: Only computes loss on fluid cells (excludes boundaries)
+5. **Auto Offline Mode**: Falls back to offline wandb if no API key
+
+## Performance Expectations
+
+| Metric | Value |
+|--------|-------|
+| Dataset Size | 300 samples (~150 MB) |
+| Generation Time | 2-6 hours (10 cores) |
+| Training Time | 6-12 hours (GPU, 500 epochs) |
+| Best Val Loss | 0.02-0.04 (normalized MSE) |
+| Model Parameters | ~1.5M (scaling=1.0) |
+
+## Troubleshooting
+
+**OpenFOAM not found**
+```bash
+source /opt/openfoam13/etc/bashrc  # Or your OpenFOAM path
+```
+
+**CUDA out of memory**
+- Reduce `batch_size` from 8 to 4 or 2
+- Reduce `scaling` from 1.0 to 0.5
+
+**Training instability / NaN loss**
+- Already fixed with gradient clipping
+- If persists, increase clipping strength (reduce `max_norm`)
+
+**Slow dataset generation**
+- Increase `N_CORES` up to CPU count
+- Use coarser mesh (increase `BASE_CELL_SIZE`)
+
+## Project Structure
+
+```
+AICFD/
+├── reset_template.py          # Generates base_template/
+├── setup_shapes.py             # Generates shapes/ module
+├── generate_dataset.py         # Creates data_output/*.npy
+├── train_pointnetv1.py         # Trains model → weights/
+├── shapes/                     # Geometry generators
+│   ├── straight.py
+│   ├── bend.py
+│   ├── valve.py
+│   └── ...
+├── base_template/              # OpenFOAM template
+│   ├── system/
+│   └── constant/
+├── data_output/               # Generated datasets
+└── weights/                   # Trained models
+```
+
+## Citation
+
+If you use this code, please cite:
+```
+AICFD: AI-Powered CFD Flow Prediction using PointNet
+```

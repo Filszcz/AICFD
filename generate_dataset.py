@@ -18,7 +18,7 @@ import shapes.venturi, shapes.manifold
 TEMPLATE_DIR = "base_template"
 OUTPUT_DIR = "data_output"
 N_CORES = 10
-SAMPLES_PER_SHAPE = 50 
+SAMPLES_PER_SHAPE = 5 
 
 LENGTHS = [10.0, 15.0]
 DIAMETERS = [1.0]
@@ -132,7 +132,8 @@ def run_case(p):
     case_params = get_random_params(shape_key)
     case_name = f"{shape_key}_{unique_id}"
     run_dir = os.path.join("temp_runs", case_name)
-    output_path = os.path.join(OUTPUT_DIR, f"{case_name}.npz")
+    # CHANGED: Extension from .npz to .npy
+    output_path = os.path.join(OUTPUT_DIR, f"{case_name}.npy")
 
     if os.path.exists(output_path): return None
 
@@ -230,12 +231,14 @@ def run_case(p):
         else:
             all_data = fluid_data
 
-        np.savez_compressed(
-            output_path,
-            data=all_data, 
-            shape_name=shape_key,
-            params=case_params
-        )
+        # CHANGED: Wrap data in a dictionary and use np.save
+        save_payload = {
+            "data": all_data,
+            "shape_name": shape_key,
+            "params": case_params
+        }
+        np.save(output_path, save_payload)
+        
         return None
 
     except subprocess.CalledProcessError as e:

@@ -1,3 +1,43 @@
+"""
+setup_shapes.py - Geometric Shape Generator Setup
+
+PURPOSE:
+    Generates Python modules for creating OpenFOAM blockMeshDict configurations
+    for various pipe geometries. This script creates the shapes/ directory with
+    individual generator modules that produce structured hexahedral meshes.
+
+USAGE:
+    python setup_shapes.py
+
+OUTPUT:
+    Creates shapes/ directory with the following modules:
+    - __init__.py         : Package initializer (empty)
+    - straight.py         : Straight pipe generator
+    - bend.py             : 45° or 90° elbow generator
+    - valve.py            : Adjustable valve with variable opening
+    - obstacle.py         : Pipe with cylindrical obstruction
+    - venturi.py          : Converging-diverging nozzle
+    - manifold.py         : Three-branch T-junction
+
+SHAPE PARAMETERS:
+    All generators accept (L, D, cell_size, **kwargs):
+    - L: Length in meters
+    - D: Diameter in meters
+    - cell_size: Base mesh cell size
+    - **kwargs: Shape-specific parameters (e.g., bend_angle, valve_opening)
+
+MESH GENERATION:
+    - Uses blockMesh structured hex meshing
+    - Automatic cell count calculation from cell_size
+    - 2D simplification with empty frontAndBack patches
+    - Named boundaries: inlet, outlet, walls, frontAndBack
+
+NOTES:
+    - Run this ONCE before generate_dataset.py
+    - All shapes use common helper get_cells() for mesh sizing
+    - Generated code is written to disk as .py files
+"""
+
 import os
 import math
 
