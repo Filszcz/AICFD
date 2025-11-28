@@ -3,7 +3,7 @@ import shutil
 import sys
 
 # TARGET FOLDER
-TARGET_DIR = "data_output"
+TARGET_DIR = "weights"
 
 def clean_data():
     if not os.path.exists(TARGET_DIR):
@@ -11,7 +11,7 @@ def clean_data():
         return
 
     print(f"WARNING: You are about to DELETE the directory: '{TARGET_DIR}'")
-    print(f"This contains all your generated .npy simulation files.")
+    print(f"This contains all your weights files.")
     
     confirm = input("Are you sure you want to delete it? (yes/no): ").strip().lower()
     

@@ -52,6 +52,18 @@ TROUBLESHOOTING:
     - Gradient explosion: Increase gradient clipping strength (lower max_norm)
 """
 
+"""
+train_pointnetv1.py - PointNet CFD Flow Predictor Training
+"""
+
+"""
+train_pointnetv1.py - PointNet CFD Flow Predictor Training
+"""
+
+"""
+train_pointnetv1.py - PointNet CFD Flow Predictor Training
+"""
+
 import datetime
 import os
 import glob
@@ -61,145 +73,160 @@ import torch.nn.functional as F
 import numpy as np
 import wandb
 import matplotlib
-matplotlib.use('Agg') # Non-interactive backend for server
+matplotlib.use('Agg') 
 import matplotlib.pyplot as plt
 from torch.utils.data import Dataset, DataLoader
 from sklearn.model_selection import train_test_split
 
 # ==========================================
-# 1. Configuration & WandB Init
+# 1. Configuration
 # ==========================================
 
-# Default Hyperparameters
 DEFAULT_CONFIG = {
     "project_name": "ST_CFDAI",
     "data_dir": "./data_output",
-    "file_pattern": "*.npy",
-    "batch_size": 8,
-    "learning_rate": 1e-4,      # Slight increase for PointNet
-    "epochs": 500,
+    "file_pattern": "*.npy", 
+    "batch_size": 32,
+    "num_points": 4096,         
+    "learning_rate": 1e-3,      
+    "epochs": 300,
     "architecture": "PointnetCFD",
-    "scaling": 1.0,            # Controls model width (0.25 = Small, 1.0 = Standard)
-    "val_split": 0.2,           # 10% validation is usually enough for geometry tasks
-    "vis_frequency": 99,         # Visualize every 5 epochs
+    "scaling": 1.0,
+    "val_split": 0.15,
+    "vis_frequency": 10, 
     "num_workers": 4,           
-    "input_channels": 8,        # Coords(3) + y_wall(1) + flags(4) = 8
-    "output_channels": 4        # u,v,w,p
+    "input_channels": 8,
+    "output_channels": 4 
 }
 
-# Ensure weight directory exists
 os.makedirs("weights", exist_ok=True)
 
 # ==========================================
-# 2. Data Loading
+# 2. Memory-Safe Data Loading
 # ==========================================
 
 class FluidDataset(Dataset):
-    def __init__(self, file_list, load_to_ram=False):
+    def __init__(self, file_list, num_points=4096):
         self.file_list = file_list
-        self.load_to_ram = load_to_ram
-        self.data_cache = []
+        self.num_points = num_points
 
-        if self.load_to_ram:
-            print(f"Loading {len(file_list)} files into RAM...")
-            for f in file_list:
-                self.data_cache.append(np.load(f))
+    def load_file(self, file_path):
+        try:
+            # Load the file
+            raw = np.load(file_path, allow_pickle=True)
+            
+            # Case 1: .npz file (Zipped archive)
+            if isinstance(raw, np.lib.npyio.NpzFile):
+                return raw['data']
+                
+            # Case 2: 0-D Array wrapping a Dictionary
+            if raw.ndim == 0:
+                content = raw.item()
+                if isinstance(content, dict) and 'data' in content:
+                    return content['data']
+            
+            # Case 3: Raw numpy array
+            return raw
+
+        except Exception as e:
+            print(f"Error loading {file_path}: {e}")
+            return np.zeros((self.num_points, 12), dtype=np.float32)
+
+    def _get_empty_sample(self):
+        """Returns a zeroed sample to safely skip bad data"""
+        x = torch.zeros((8, self.num_points), dtype=torch.float32)
+        y = torch.zeros((4, self.num_points), dtype=torch.float32)
+        mask = torch.zeros((self.num_points), dtype=torch.bool)
+        return x, y, mask
 
     def __len__(self):
         return len(self.file_list)
 
     def __getitem__(self, idx):
-        # Load data: N x 12
-        # Format: [x, y, z, u, v, w, p, y_wall, is_fluid, is_wall, is_inlet, is_outlet]
-        if self.load_to_ram:
-            sample = self.data_cache[idx]
+        # 1. Load Data
+        sample = self.load_file(self.file_list[idx])
+        
+        # Check 1: Basic Shape
+        if sample.ndim != 2 or sample.shape[0] == 0:
+            return self._get_empty_sample()
+
+        # Check 2: NaNs or Infs (Corrupted Data)
+        if not np.all(np.isfinite(sample)):
+            # print(f"Skipping {self.file_list[idx]}: Contains NaN/Inf") # Uncomment to debug
+            return self._get_empty_sample()
+
+        # Check 3: Diverged Simulation (Exploded Values)
+        # If velocity or pressure is > 1e10, the CFD solver likely diverged.
+        if np.max(np.abs(sample[:, 3:7])) > 1e10:
+            # print(f"Skipping {self.file_list[idx]}: Exploded values detected") # Uncomment to debug
+            return self._get_empty_sample()
+
+        total_points = sample.shape[0]
+
+        # 2. RESAMPLING
+        if total_points >= self.num_points:
+            choice_idx = np.random.choice(total_points, self.num_points, replace=False)
         else:
-            sample = np.load(self.file_list[idx])
-
-        # 1. Coords (0,1,2)
-        coords = sample[:, 0:3]
+            choice_idx = np.random.choice(total_points, self.num_points, replace=True)
         
-        # Normalize coords locally to [-1, 1] (Standard PointNet practice)
+        sample = sample[choice_idx, :] 
+
+        # 3. Process Features
+        coords = sample[:, 0:3].astype(np.float32)
+        
+        # Normalize Coords
         centroid = np.mean(coords, axis=0)
-        coords = coords - centroid
-        m = np.max(np.sqrt(np.sum(coords ** 2, axis=1)))
-        coords = coords / (m + 1e-6)
+        coords -= centroid
+        dist = np.linalg.norm(coords, axis=1)
+        m = np.max(dist)
+        if m > 1e-6:
+            coords /= m
 
-        # 2. Features (7,8,9,10,11) -> y_wall, is_fluid, is_wall, is_inlet, is_outlet
-        # Note: We pass is_fluid as a feature even though it's used for masking too.
-        # It helps the net distinguish bulk fluid from boundary layers.
-        features = sample[:, 7:12] 
-        
-        # Inputs: Coords + Features -> [N, 8] -> Transpose to [8, N]
-        x_in = np.concatenate([coords, features], axis=1).astype(np.float32)
+        features = sample[:, 7:12].astype(np.float32)
+
+        x_in = np.concatenate([coords, features], axis=1)
         x_in = x_in.transpose(1, 0) 
 
-        # 3. Targets (3,4,5,6) -> u, v, w, p
-        y_out = sample[:, 3:7].astype(np.float32)
+        # 4. Process Targets (u, v, w, p)
+        # Use float64 for stats calculation to prevent overflow warnings
+        y_out_raw = sample[:, 3:7].astype(np.float64)
         
-        # Normalize targets to improve training stability
-        # Velocity (u,v,w) - normalize by magnitude
-        u, v, w, p = y_out[:, 0], y_out[:, 1], y_out[:, 2], y_out[:, 3]
-        vel_mag = np.sqrt(u**2 + v**2 + w**2) + 1e-6
+        # Normalize Velocity
+        vel_mag = np.linalg.norm(y_out_raw[:, 0:3], axis=1, keepdims=True)
         max_vel = np.max(vel_mag)
+        
+        # Normalize Pressure
+        p_mean = np.mean(y_out_raw[:, 3])
+        p_std = np.std(y_out_raw[:, 3])
+
+        # Apply Normalization (Back to float32)
+        y_out = sample[:, 3:7].astype(np.float32)
+
         if max_vel > 1e-6:
-            y_out[:, 0:3] = y_out[:, 0:3] / max_vel
+            y_out[:, 0:3] /= max_vel
         
-        # Pressure - normalize by std
-        p_mean = np.mean(p)
-        p_std = np.std(p) + 1e-6
-        y_out[:, 3] = (p - p_mean) / p_std
-        
-        y_out = y_out.transpose(1, 0) 
-        
-        # 4. Fluid Mask (8)
-        # We only calculate loss on Fluid points (1), ignoring walls (0)
+        if p_std > 1e-6:
+            y_out[:, 3] = (y_out[:, 3] - p_mean) / p_std
+            
+        y_out = y_out.transpose(1, 0)
+
+        # 5. Mask
         fluid_mask = sample[:, 8].astype(bool)
-        
+
         return torch.from_numpy(x_in), torch.from_numpy(y_out), torch.from_numpy(fluid_mask)
 
-def collate_fn_pad(batch):
-    inputs = [b[0] for b in batch]
-    targets = [b[1] for b in batch]
-    fluid_masks = [b[2] for b in batch]
-
-    batch_size = len(batch)
-    # Find max number of points in this batch
-    max_len = max([t.shape[1] for t in inputs])
-    n_in = inputs[0].shape[0]
-    n_out = targets[0].shape[0]
-
-    # Initialize padded tensors
-    padded_inputs = torch.zeros(batch_size, n_in, max_len)
-    padded_targets = torch.zeros(batch_size, n_out, max_len)
-    padded_fluid_masks = torch.zeros(batch_size, max_len, dtype=torch.bool)
-    padding_mask = torch.zeros(batch_size, max_len, dtype=torch.bool) # 1=Real, 0=Pad
-
-    for i in range(batch_size):
-        length = inputs[i].shape[1]
-        padded_inputs[i, :, :length] = inputs[i]
-        padded_targets[i, :, :length] = targets[i]
-        padded_fluid_masks[i, :length] = fluid_masks[i]
-        padding_mask[i, :length] = 1 
-
-    return padded_inputs, padded_targets, padded_fluid_masks, padding_mask
-
 # ==========================================
-# 3. Model (PointNet Segmentation)
+# 3. Model
 # ==========================================
 
 class PointNetFluid(nn.Module):
     def __init__(self, input_channels=8, output_channels=4, scaling=1.0):
         super(PointNetFluid, self).__init__()
-        
         s = scaling
-        # Input Transform / Embedding
         self.conv1 = nn.Conv1d(input_channels, int(64*s), 1)
         self.bn1 = nn.BatchNorm1d(int(64*s))
         self.conv2 = nn.Conv1d(int(64*s), int(64*s), 1)
         self.bn2 = nn.BatchNorm1d(int(64*s))
-        
-        # Feature encoding
         self.conv3 = nn.Conv1d(int(64*s), int(64*s), 1)
         self.bn3 = nn.BatchNorm1d(int(64*s))
         self.conv4 = nn.Conv1d(int(64*s), int(128*s), 1)
@@ -207,61 +234,41 @@ class PointNetFluid(nn.Module):
         self.conv5 = nn.Conv1d(int(128*s), int(1024*s), 1)
         self.bn5 = nn.BatchNorm1d(int(1024*s))
 
-        # Segmentation Head (Concatenating Local + Global)
+        # Segmentation Head
         self.conv6 = nn.Conv1d(int(1024*s) + int(64*s), int(512*s), 1)
         self.bn6 = nn.BatchNorm1d(int(512*s))
         self.conv7 = nn.Conv1d(int(512*s), int(256*s), 1)
         self.bn7 = nn.BatchNorm1d(int(256*s))
         self.conv8 = nn.Conv1d(int(256*s), int(128*s), 1)
         self.bn8 = nn.BatchNorm1d(int(128*s))
-        
-        # Final prediction (No BN/Relu)
         self.conv9 = nn.Conv1d(int(128*s), output_channels, 1)
 
-    def forward(self, x, padding_mask=None):
-        num_points = x.size(-1)
-
+    def forward(self, x):
+        n_pts = x.size(2)
         x = F.relu(self.bn1(self.conv1(x)))
         x = F.relu(self.bn2(self.conv2(x)))
-        local_feature = x  # Save for concatenation
+        local_feat = x 
 
         x = F.relu(self.bn3(self.conv3(x)))
         x = F.relu(self.bn4(self.conv4(x)))
         x = F.relu(self.bn5(self.conv5(x)))
 
-        # Global Max Pooling (Handle Padding)
-        if padding_mask is not None:
-            # Expand mask to [Batch, Channels, Points]
-            mask_expanded = padding_mask.unsqueeze(1).expand_as(x)
-            # Set padded areas to -inf so max_pool ignores them
-            x_masked = x.masked_fill(~mask_expanded, float('-inf'))
-            global_feature = F.max_pool1d(x_masked, kernel_size=num_points)
-        else:
-            global_feature = F.max_pool1d(x, kernel_size=num_points)
-            
-        # Expand global feature to match number of points
-        global_feature = global_feature.expand(-1, -1, num_points)
-        
-        # Concatenate
-        x = torch.cat([local_feature, global_feature], dim=1)
+        global_feat = F.max_pool1d(x, n_pts)
+        global_feat = global_feat.expand(-1, -1, n_pts)
 
-        # Decoder
+        x = torch.cat([local_feat, global_feat], dim=1)
+
         x = F.relu(self.bn6(self.conv6(x)))
         x = F.relu(self.bn7(self.conv7(x)))
         x = F.relu(self.bn8(self.conv8(x)))
-        
         x = self.conv9(x)
         return x
 
 # ==========================================
-# 4. Visualization Utilities
+# 4. Utilities
 # ==========================================
 
 def create_comparison_plot(coords, target, pred, title_prefix):
-    """
-    Creates a matplotlib figure comparing Target vs Pred in 3D
-    """
-    # Subsample for visualization speed (max 2000 points)
     if coords.shape[0] > 2000:
         idx = np.random.choice(coords.shape[0], 2000, replace=False)
         coords = coords[idx]
@@ -269,73 +276,46 @@ def create_comparison_plot(coords, target, pred, title_prefix):
         pred = pred[idx]
 
     fig = plt.figure(figsize=(10, 5))
-    
-    # Target
     ax1 = fig.add_subplot(1, 2, 1, projection='3d')
-    sc1 = ax1.scatter(coords[:,0], coords[:,1], coords[:,2], c=target, cmap='jet', s=3, alpha=0.6)
-    ax1.set_title(f"Ground Truth: {title_prefix}")
-    # Hide axes ticks for cleanliness
-    ax1.set_xticks([])
-    ax1.set_yticks([])
-    ax1.set_zticks([])
-    plt.colorbar(sc1, ax=ax1, fraction=0.046, pad=0.04)
+    sc1 = ax1.scatter(coords[:,0], coords[:,1], coords[:,2], c=target, cmap='jet', s=5, alpha=0.7)
+    ax1.set_title(f"Truth: {title_prefix}")
+    ax1.axis('off')
     
-    # Prediction
     ax2 = fig.add_subplot(1, 2, 2, projection='3d')
-    sc2 = ax2.scatter(coords[:,0], coords[:,1], coords[:,2], c=pred, cmap='jet', s=3, alpha=0.6)
-    ax2.set_title(f"Prediction: {title_prefix}")
-    ax2.set_xticks([])
-    ax2.set_yticks([])
-    ax2.set_zticks([])
-    plt.colorbar(sc2, ax=ax2, fraction=0.046, pad=0.04)
-    
+    sc2 = ax2.scatter(coords[:,0], coords[:,1], coords[:,2], c=pred, cmap='jet', s=5, alpha=0.7)
+    ax2.set_title(f"Pred: {title_prefix}")
+    ax2.axis('off')
     plt.tight_layout()
     return fig
 
 def log_visualizations(model, val_loader, device, epoch):
     model.eval()
     try:
-        inputs, targets, fluid_masks, padding_mask = next(iter(val_loader))
+        inputs, targets, masks = next(iter(val_loader))
     except StopIteration:
         return
 
     inputs, targets = inputs.to(device), targets.to(device)
-    padding_mask = padding_mask.to(device)
     
     with torch.no_grad():
-        preds = model(inputs, padding_mask)
+        preds = model(inputs)
 
-    # Pick first item in batch
     idx = 0
-    # Extract only valid points (no padding)
-    mask = padding_mask[idx].cpu().numpy().astype(bool)
+    coords = inputs[idx].cpu().numpy().transpose(1, 0)[:, 0:3]
+    y_true = targets[idx].cpu().numpy().transpose(1, 0)
+    y_pred = preds[idx].cpu().numpy().transpose(1, 0)
     
-    # Inputs: [8, N] -> [N, 8]
-    coords = inputs[idx].cpu().numpy().transpose(1, 0)[mask, 0:3]
-    
-    # Targets/Preds: [4, N] -> [N, 4] -> u,v,w,p
-    y_true = targets[idx].cpu().numpy().transpose(1, 0)[mask, :]
-    y_pred = preds[idx].cpu().numpy().transpose(1, 0)[mask, :]
-
-    # Pressure (Index 3)
     fig_p = create_comparison_plot(coords, y_true[:, 3], y_pred[:, 3], "Pressure")
-    
-    # Velocity Magnitude (Indices 0,1,2)
-    vel_mag_true = np.sqrt(y_true[:,0]**2 + y_true[:,1]**2 + y_true[:,2]**2)
-    vel_mag_pred = np.sqrt(y_pred[:,0]**2 + y_pred[:,1]**2 + y_pred[:,2]**2)
-    fig_v = create_comparison_plot(coords, vel_mag_true, vel_mag_pred, "Velocity Mag")
+    v_true = np.linalg.norm(y_true[:,0:3], axis=1)
+    v_pred = np.linalg.norm(y_pred[:,0:3], axis=1)
+    fig_v = create_comparison_plot(coords, v_true, v_pred, "Velocity Mag")
 
-    wandb.log({
-        "Vis/Pressure": wandb.Image(fig_p),
-        "Vis/Velocity": wandb.Image(fig_v),
-        "epoch": epoch
-    })
-    
+    wandb.log({"Vis/Pressure": wandb.Image(fig_p), "Vis/Velocity": wandb.Image(fig_v), "epoch": epoch})
     plt.close(fig_p)
     plt.close(fig_v)
 
 # ==========================================
-# 5. Main Training Loop
+# 5. Main Loop
 # ==========================================
 
 def get_file_list(config):
@@ -343,135 +323,112 @@ def get_file_list(config):
     files = sorted(glob.glob(pattern))
     if not files:
         raise ValueError(f"No files found in {pattern}")
-    print(f"Found {len(files)} files.")
     return files
 
 def main():
-    date = datetime.datetime.today().strftime("%Y_%m_%d_%H_%M")
-    
-    # Initialize WandB
-    wandb_mode = "online"
-    wandb.init(project=DEFAULT_CONFIG["project_name"], config=DEFAULT_CONFIG, mode=wandb_mode)
+    wandb.init(project=DEFAULT_CONFIG["project_name"], config=DEFAULT_CONFIG, mode="online")
     config = wandb.config 
-
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"Device: {device}")
 
-    # Data
     all_files = get_file_list(config)
-    train_files, val_files = train_test_split(all_files, test_size=config.val_split, random_state=42, shuffle=True)
+    train_files, val_files = train_test_split(all_files, test_size=config.val_split, random_state=42)
     
-    train_ds = FluidDataset(train_files, load_to_ram=False) # Set True if you have >64GB RAM
-    val_ds = FluidDataset(val_files, load_to_ram=False)
+    train_ds = FluidDataset(train_files, num_points=config.num_points)
+    val_ds = FluidDataset(val_files, num_points=config.num_points)
 
-    # Pin memory for faster GPU transfer
     train_loader = DataLoader(train_ds, batch_size=config.batch_size, shuffle=True, 
-                              collate_fn=collate_fn_pad, num_workers=config.num_workers, pin_memory=True)
+                              num_workers=config.num_workers, pin_memory=True, persistent_workers=True)
     val_loader = DataLoader(val_ds, batch_size=config.batch_size, shuffle=False, 
-                            collate_fn=collate_fn_pad, num_workers=config.num_workers, pin_memory=True)
+                            num_workers=config.num_workers, pin_memory=True, persistent_workers=True)
 
-    # Model
     model = PointNetFluid(input_channels=config.input_channels, 
                           output_channels=config.output_channels, 
                           scaling=config.scaling).to(device)
     
     optimizer = torch.optim.Adam(model.parameters(), lr=config.learning_rate)
-    # Reduce loss on plateaus
-    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.5, patience=10)
+    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.5, patience=15)
     criterion = nn.MSELoss(reduction='none')
 
-    wandb.watch(model, log="gradients", log_freq=100)
-    best_val_loss = float('inf')
+    print(f"Training on {len(train_files)} files. Point count fixed to {config.num_points}.")
 
-    print(f"Starting training on {len(train_files)} samples, validating on {len(val_files)} samples...")
+    best_val_loss = float('inf')
 
     for epoch in range(config.epochs):
         model.train()
         train_loss_accum = 0.0
-        batches_count = 0
+        count = 0
         
-        for batch_idx, (inputs, targets, fluid_masks, padding_mask) in enumerate(train_loader):
-            inputs, targets = inputs.to(device, non_blocking=True), targets.to(device, non_blocking=True)
-            fluid_masks, padding_mask = fluid_masks.to(device, non_blocking=True), padding_mask.to(device, non_blocking=True)
+        for i, (inputs, targets, masks) in enumerate(train_loader):
+            inputs = inputs.to(device, non_blocking=True)
+            targets = targets.to(device, non_blocking=True)
+            masks = masks.to(device, non_blocking=True)
             
+            # --- DEBUG: CHECK DATA INTEGRITY (Run once per epoch) ---
+            if i == 0 and epoch == 0:
+                print("\n--- SANITY CHECK (Batch 0) ---")
+                print(f"Input Range: {inputs.min().item():.3f} to {inputs.max().item():.3f}")
+                print(f"Target Range: {targets.min().item():.3f} to {targets.max().item():.3f}")
+                print(f"Fluid Points: {masks.sum().item()} / {masks.numel()} ({masks.sum().item()/masks.numel()*100:.1f}%)")
+                print("------------------------------\n")
+            # ---------------------------------------------------------
+
             optimizer.zero_grad()
-            outputs = model(inputs, padding_mask)
+            outputs = model(inputs)
 
-            # Loss calculated ONLY on Fluid points (valid_mask)
-            valid_mask = fluid_masks & padding_mask
+            loss_raw = criterion(outputs, targets) 
             
-            loss_raw = criterion(outputs, targets) # [B, 4, N]
-            
-            # Average over channels (4), keep points
-            # loss_per_point = loss_raw.mean(dim=1) # [B, N]
-            
-            # Select only fluid points
-            # masked_loss = loss_per_point[valid_mask]
+            # Robust Loss Calculation
+            valid_points = masks.sum()
+            if valid_points > 0:
+                loss = loss_raw.mean(dim=1)[masks].mean()
+            else:
+                loss = loss_raw.mean()
 
-            masked_loss = loss_raw.mean(dim=1)[valid_mask]
-            
-            if masked_loss.numel() > 0:
-                loss = masked_loss.mean()
+            if not torch.isnan(loss):
                 loss.backward()
-                # Gradient clipping to prevent explosion
                 torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
                 optimizer.step()
-                
                 train_loss_accum += loss.item()
-                batches_count += 1
+                count += 1
                 wandb.log({"batch_loss": loss.item()})
             else:
-                print("Warning: Empty batch (no fluid points found?)")
+                print(f"NaN loss detected at batch {i}")
 
-        avg_train_loss = train_loss_accum / max(batches_count, 1)
+        avg_train = train_loss_accum / max(count, 1)
 
-
-        # Validation
         model.eval()
         val_loss_accum = 0.0
-        val_batches = 0
+        val_count = 0
         with torch.no_grad():
-            for inputs, targets, fluid_masks, padding_mask in val_loader:
-                inputs, targets = inputs.to(device), targets.to(device)
-                fluid_masks, padding_mask = fluid_masks.to(device), padding_mask.to(device)
-
-                outputs = model(inputs, padding_mask)
+            for inputs, targets, masks in val_loader:
+                inputs = inputs.to(device, non_blocking=True)
+                targets = targets.to(device, non_blocking=True)
+                masks = masks.to(device, non_blocking=True)
                 
-                valid_mask = fluid_masks & padding_mask
+                outputs = model(inputs)
                 loss_raw = criterion(outputs, targets)
-                masked_loss = loss_raw.mean(dim=1)[valid_mask]
+                
+                if masks.sum() > 0:
+                    val_loss = loss_raw.mean(dim=1)[masks].mean()
+                else:
+                    val_loss = loss_raw.mean()
+                
+                if not torch.isnan(val_loss):
+                    val_loss_accum += val_loss.item()
+                    val_count += 1
 
-                if masked_loss.numel() > 0:
-                    val_loss_accum += masked_loss.mean().item()
-                    val_batches += 1
+        avg_val = val_loss_accum / max(val_count, 1)
+        scheduler.step(avg_val)
 
-        avg_val_loss = val_loss_accum / max(val_batches, 1)
-        
-        # Update Scheduler
-        scheduler.step(avg_val_loss)
+        print(f"Epoch {epoch+1} | Train: {avg_train:.5f} | Val: {avg_val:.5f}")
+        wandb.log({"train_loss": avg_train, "val_loss": avg_val, "epoch": epoch, "lr": optimizer.param_groups[0]['lr']})
 
-        # Log Metrics
-        wandb.log({
-            "epoch": epoch,
-            "train_loss": avg_train_loss,
-            "val_loss": avg_val_loss,
-            "lr": optimizer.param_groups[0]['lr']
-        })
-
-        print(f"Epoch {epoch+1}/{config.epochs} | Train: {avg_train_loss:.5f} | Val: {avg_val_loss:.5f}")
-
-        # Checkpoint
-        if avg_val_loss < best_val_loss:
-            best_val_loss = avg_val_loss
-            save_path = f"weights/best_model.pth"
-            torch.save(model.state_dict(), save_path)
-            wandb.save(save_path)
-            # Also save with date for history
-            torch.save(model.state_dict(), f"weights/model_{date}_ep{epoch}.pth")
-
-        # Visualization
+        if avg_val < best_val_loss:
+            best_val_loss = avg_val
+            torch.save(model.state_dict(), "weights/best_model.pth")
+            
         if epoch % config.vis_frequency == 0:
-            print("  > Generating visual log...")
             log_visualizations(model, val_loader, device, epoch)
 
     wandb.finish()

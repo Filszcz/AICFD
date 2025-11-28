@@ -18,12 +18,12 @@ import shapes.venturi, shapes.manifold
 TEMPLATE_DIR = "base_template"
 OUTPUT_DIR = "data_output"
 N_CORES = 10
-SAMPLES_PER_SHAPE = 5 
+SAMPLES_PER_SHAPE = 4 
 
-LENGTHS = [10.0, 15.0]
-DIAMETERS = [1.0]
-VELOCITIES = [1.0, 5.0]
-REFINEMENTS = [0, 1] 
+LENGTHS = [5.0]
+DIAMETERS = [0.25]
+VELOCITIES = [0.5]
+REFINEMENTS = [2, 4, 6, 8] 
 
 BASE_CELL_SIZE = 0.05 
 
