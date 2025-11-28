@@ -17,7 +17,6 @@ python setup_shapes.py
 - **Purpose**: Creates `shapes/` module with geometry generators
 - **Output**: Python files for 6 different pipe geometries
 - **Run once**: Only needed for initial setup
-- **Duration**: <1 second
 
 ### 2. Reset OpenFOAM Template
 ```bash
@@ -26,15 +25,13 @@ python reset_template.py
 - **Purpose**: Creates clean OpenFOAM case template
 - **Output**: `base_template/` directory with system files
 - **Run**: Before each dataset generation (optional)
-- **Duration**: <1 second
 
 ### 3. Generate CFD Dataset
 ```bash
 python generate_dataset.py
 ```
 - **Purpose**: Runs 300 OpenFOAM simulations with varying parameters
-- **Output**: `.npy` files in `data_output/` (each ~200-1500 KB)
-- **Duration**: 2-6 hours (on 10 cores)
+- **Output**: `.npy` files in `data_output/`
 - **Requirements**: OpenFOAM v13+ installed and sourced
 - **Configuration**: Edit lines 18-26 to adjust samples, cores, parameters
 
@@ -44,7 +41,6 @@ python train_pointnetv1.py
 ```
 - **Purpose**: Trains neural network to predict flow from geometry
 - **Output**: `weights/best_model.pth` + training logs in `wandb/`
-- **Duration**: 6-12 hours (500 epochs on GPU)
 - **Requirements**: PyTorch with CUDA, wandb, matplotlib
 - **Configuration**: Edit `DEFAULT_CONFIG` (line 20-34) for hyperparameters
 
